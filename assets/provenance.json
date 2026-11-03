@@ -1,0 +1,51 @@
+[
+  {
+    "file": "sunset.hdr",
+    "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/venice_sunset_1k.hdr",
+    "bytes": 1440400,
+    "sha256": "92fe2b29b1957828fb8925a57633540bbba5bf380d9285ed553443e834249352",
+    "license": "CC0"
+  },
+  {
+    "file": "wood_table_001_diff.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_diff_1k.jpg",
+    "bytes": 215573,
+    "sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+    "license": "CC0"
+  },
+  {
+    "file": "wood_table_001_nor_gl.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_nor_gl_1k.jpg",
+    "bytes": 51927,
+    "sha256": "9bf7ddf5721e225c20290f1772ae37f9bdfd49658f6d458259eb794e2149d3cf",
+    "license": "CC0"
+  },
+  {
+    "file": "wood_table_001_rough.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_rough_1k.jpg",
+    "bytes": 237261,
+    "sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+    "license": "CC0"
+  },
+  {
+    "file": "concrete_floor_02_diff.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_diff_1k.jpg",
+    "bytes": 776097,
+    "sha256": "6db84a6d87dc50508b9d134d6fbd2b7e876b8081a5f43a118a249ca18de73af5",
+    "license": "CC0"
+  },
+  {
+    "file": "concrete_floor_02_nor_gl.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_nor_gl_1k.jpg",
+    "bytes": 192757,
+    "sha256": "fcda391b57a816d646ae15544688be53790478da5cd48dbe514b3c6901415e61",
+    "license": "CC0"
+  },
+  {
+    "file": "concrete_floor_02_rough.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_rough_1k.jpg",
+    "bytes": 318550,
+    "sha256": "c7f026a611b7859903c61ec7fd4574944157223e9e7796413dd6e2a66eaeac7a",
+    "license": "CC0"
+  }
+]
