@@ -1,65 +1,87 @@
-# Creator Base VR World
+# Creator Base VR World — Experience v3
 
 > Concept study for a Zyeta experience design exercise. Hypothetical brief; not affiliated with or endorsed by adidas.
 
-Live: https://kari-basavaraj.github.io/creator-base-vr/
+[Walk the live world](https://kari-basavaraj.github.io/creator-base-vr/) · [Inspect the exported GLB](https://kari-basavaraj.github.io/creator-base-vr/glb-preview.html) · [Brief alignment and storyboards](docs/brief-alignment.md)
 
-A no-build, metre-scale Three.js/WebXR architectural study built from **Creator Base VR World — Build Spec.pdf**, supplied November 1, 2026. Source coordinates use CAD X east, CAD Y north; scene X = CAD X, Z = −CAD Y, Y = height.
+A no-build Three.js/WebXR concept model in metres. CAD X maps to scene X, CAD Y to scene −Z, height to scene Y. The fixed architectural shell and columns follow the supplied derived build coordinates; the original DWG was not available for independent verification.
 
-## Open
+## Run locally
 
 ```sh
-cd /Users/basavarajkm/code/Adhoc-OneTime-Codex-Playground/creator-base-vr
-python3 -m http.server 8088
+python3 -m http.server 8089
 ```
 
-Open http://localhost:8088. No npm install or build step. Three.js 0.180.0 is pinned and vendored with its MIT license; fonts optionally load from Google Fonts, with system fallbacks.
+Open `http://localhost:8089/`. No package install or build is required. For Quest use the HTTPS GitHub Pages address and choose **Enter VR** when the browser supports immersive VR. Actual Quest hardware behaviour, frame rate and comfort remain untested.
 
-For Quest, serve this folder on an **HTTPS origin with a trusted certificate** and open that address in Quest Browser. A computer's plain HTTP LAN address does not enable immersive WebXR. No public hosting has been configured. Enter VR appears when the browser supports immersive VR.
+## What is implemented
+
+- **Four audience journeys:** Kabir, Arjun, Riya and Meera, with before/after context, intended emotional arcs and planned stops. Times are targets, not measured outcomes.
+- **Three signature demonstrations:** a step-triggered arrival trace; timed lifted-product construction stories; an illustrative pin-wall visit mark with browser-local history and a take-home PNG.
+- **Product decisions:** eight clearly labelled concept narratives, up to three shortlisted concepts, a private comparison table and a downloadable comparison note. No real adidas specifications or orders are represented.
+- **Participation:** material choices and a browser-local community contribution wall. There is no shared cloud archive or actual hand-drawing capture.
+- **Seasonal refresh:** two replaceable content bundles, changed from Host controls without rebuilding geometry. A previous season's saved marks return when that season is selected again.
+- **Functional room identity:** maker tools/material library, a camera-ready studio with a 20-second no-capture rehearsal, a discreet AV rack, a privacy door/screened partner suite, café details and a quieter office treatment for 30 modeled desk positions.
+- **Arena:** five arrangements—launch, athlete talk, partner presentation, run club and everyday. Six tiers contain 84 audience seats, with two proposed step-free floor positions. These are design proposals, not certified capacity, occupied sightlines, evacuation or accessibility.
+- **Local ambience:** shared exterior time, different interior light/material/activity character, quiet neutral route cues and opt-in abstract room tone/footsteps. Orange is reserved for visitor marks; the overhead Arena ring is warm white.
+- **Branding:** two inward-facing entrance wordmarks plus Lab, stage and partner-suite marks; “CREATOR BASE” overhead. Real vector geometry is embedded in the GLB.
+- **Layout corrections:** traversable core-side staff interface, a stage clear of the fixed column footprint, and a visitor route checked at 428 centre-line samples against the current collision model.
 
 ## Controls
 
-- Start the journey: restores exact spawn at CAD (31.4, 30), eye height 1.6 m, north-facing.
-- Desktop: drag to look, WASD / arrows to walk; E or click near a shoe to lift it for 10 seconds.
-- Touch: drag to look, hold the up-arrow to walk; journey buttons jump to the four story beats.
-- Click the floor map to teleport to a valid position. Explore floor plan hides ceilings for an elevated view.
-- Stand on the Arena pad: visitor pins rise over four seconds beside the athlete.
-- Quest: left-stick head-relative smooth movement; right-stick 30° snap turn; aim controller at floor and trigger to teleport. Controller proximity lifts shoes.
-- Daylight/Dusk and Arena Event/Everyday are independently available.
-- Export world downloads the current visible model as `world.glb`. A default-event export is included in this folder. It uses `EXT_mesh_gpu_instancing`; importing tools must support that extension.
+- **Start the journey:** exact lobby spawn at CAD `(31.4,30)`, 1.6 m desktop eye height, facing north. Meera's route begins at the assumed core-side staff interface.
+- Drag to look; WASD/arrows to move; E or a short click to interact. Dragging does not accidentally activate a nearby object.
+- Lift a nearby shoe; story layers unfold over 0/5/20 seconds and reset after 30 seconds. **Journey → Product** exposes detailed text and shortlisting.
+- Interact near the maker bench, production table or comparison table for that activity. Step on the Imprint pad for an illustrative mark.
+- **Journey:** choose a persona, review the intended arc, or inspect any space. Jump controls are inspection aids; they do not prove a timed continuous visit.
+- **Host:** season, five Arena arrangements, maker material, recording rehearsal, Imprint replay, take-home mark and reset. Reset retains saved local history.
+- **Sound:** optional, off initially; no microphone is captured and no external music is loaded. Enable before entering VR if wanted.
+- **Quest:** left stick smooth movement; right stick 30° snap turn; aim and trigger for a product/activity, otherwise aim at the floor and trigger to teleport. Near-hand product activation remains available. Physical room-scale motion cannot be constrained by desktop collision rules.
+- **H / Hide UI:** unobstructed inspection. **Brand** cycles through marks; **View** includes the entrance, landmark and back tier.
+- Daylight/Dusk is independent of Arena mode. **Lightweight** disables the desktop planar reflection and directional shadow; immersive VR automatically uses that lighter path.
 
-## Included model
+## Export and import
 
-Proposed floor polygon; core mass with lift-lobby void and staff opening; 15 specified columns; full external glazing perimeter and mullions; partitions; threshold portals; eight plinths and simplified shoes; path material bands; lounge; Fuel Bar; studio and workshop; Arena stage and four tiers; 80 mm-pitch pin field and two running figures; partner suite; 30 desk positions and focus booth; landmark and deterministic city massing. Repeated chairs, pins and static primitives are instanced. Materials have locally generated grain and terrazzo textures.
+**Export showcase** downloads `Creator-Base-Experience-v3.glb`. It temporarily arranges the visual model for interpretation: event seating, one lifted construction demonstration, an illustrative relief and example comparison props. It then restores the ongoing browser state. `world.glb` is the checked-in showcase export.
 
-## Interpretation and limits
+The GLB contains geometry, standard materials, interpretation graphics, five wordmarks and instanced repetitions. It does **not** contain the app's interaction scripts, audio engine, local archive, shader sky, live lighting/shadow maps or desktop reflection render. Imported appearance depends on the viewer's lighting. Viewers need `EXT_mesh_gpu_instancing` support.
 
-- CAD coordinates in the supplied PDF are used directly; original DWG was not supplied. The spec's rendered references establish intent, while this is simplified procedural geometry rather than a photoreal model.
-- The spec conflicts on decorative orange. The story's stricter rule wins: overhead Arena ring is warm white; route light stops before the calm Fuel Bar; resting plinths are neutral. Orange marks only active visitor moments.
-- Ceiling 3.6 m, floor elevation 40 m and Vidhana Soudha location/massing remain assumptions from the PDF. No extra enclosed rooms are invented.
-- Model includes out-of-scope columns/glazing as base-build context, without an enterable out-of-scope floor.
-- No logos, brand graphics, TV walls or screens in visitor journey zones.
-- Furniture, plants and shoes are low-poly approximations. No people, spatial audio, physical hand tracking, full-screen bloom postprocessing, or server-side seasonal visitor archive. Marks last for the current session.
-- Collision prevents desktop/thumbstick travel outside the model and into core, major walls, plinths and tables; it is not a complete physics simulation. Room-scale headset motion cannot be physically constrained.
-- Headset frame rate, comfort, sightlines, 80–120-person capacity and exact landmark alignment need on-device/client validation. They are not certified by desktop tests.
+`glb-preview.html` independently loads the actual binary, with named views for entry, Lab, Imprint, workshop, studio, team space, recovery and a seated-eye back-tier inspection. This provides rendered re-import evidence, not only a count of source-scene nodes.
 
-## Verification
+## Files and content
 
-Live HTTP and browser checks passed: specified spawn, inside/outside and core collision cases, eight plinths and lift interaction, full four-second mark animation, lighting and Arena mode changes, error-free WebGL render, and GLB v2 binary export via the actual download button. About **241,892 triangles**, under the 300,000 target. Static instancing is retained. Draw calls depend on camera and quality mode; the Threshold hero view measures about 63 calls with its desktop reflection, while wider views cost more. Headset behavior remains untested on hardware.
+- `app.js`: shell, fixed geometry, locomotion and wiring.
+- `threshold.js`: tactile material pass, arrival trace and desktop rendering quality.
+- `programme.js`: room equipment, privacy door, Arena arrangements and local light setup.
+- `experience.js`: interactions, journeys, local persistence, take-home exports and host reset.
+- `season-data.js`: editable seasons, concept-product narratives and persona/zone definitions.
+- `branding.js`: official-site wordmark geometry and neutral architectural labels.
+- `tests/browser-checks.js`: browser behaviour assertions using an existing Playwright page; no new package installation is required by the app.
+- `scripts/check-source.py`: dependency-free source/import, asset-integrity and exported-binary checks.
+- `validation/`: machine-readable results and screenshots of the actual prototype/import.
 
-## Dependency security review
+## Verification and limitations
 
-Target: official npm `three@0.180.0`; scope: browser-only local modules, no package install or lifecycle execution. Registry identity, canonical `mrdoob/three.js` source, MIT license, manifest, absence of runtime dependencies/install hooks, and consumed module imports were checked. No dynamic evaluation or environment access found in consumed rendering/export modules. Fetch code in Three.js core is loader infrastructure; no model/texture URL loader is used by this app. Package SHA256 and registry integrity are recorded in `review/provenance.json`. Original archive retained under review. Classification: **approved with mitigations** (pinned local files, no shell hooks, no runtime remote code imports). Automated CVE, secret, and deep scanners were not run; this is a bounded manual inspection, not a comprehensive security audit. To stop serving, stop the Python server; there is no global installation or persistence.
+Run the built-in checks with:
 
+```sh
+python3 scripts/check-source.py
+```
 
-## Threshold visual study — November 1, 2026
+The browser test function takes an existing Playwright page already navigated to this project. It checks spawn, line crossing, products, two-concept comparison, privacy door, contributions, rehearsal trigger, five Arena modes, persistent marks, season isolation, host reset, mobile fit and WebGL state. The 20-second product checkpoint is accelerated in the test; the pin animation and recording rehearsal were also observed through real elapsed waits.
 
-Open [the visual review](http://localhost:8088/review.html) for equal-camera before/after captures and the supplied PDF target. The new `threshold.js` module adds locally served PBR surface maps, procedural terrazzo, 5,652 leaf cards and 789 branches/stems, a rounded planter bench, a continuous curved route with soft light falloff, warm interior light pools, contact-shadow textures, a directional shadow map, a blurred desktop-only floor reflection, a sunset environment, detailed façade textures and landmark trim. Furniture and room coordinates remain CAD-led.
+The current model is about **261K triangles**, under the 300K design target. See `validation/experience-v3.json` and `validation/source-check.json` for the current exported model and check results. No claim is made of photoreal parity, headset readiness, universal collision physics, measured journey success, or professional building-code compliance.
 
-Use **View: Threshold / Arrival / Landmark** to compare framing. **Hide UI** or H provides an unobstructed view. **Quality: Lightweight** disables the extra planar-reflection render and directional shadow. Entering VR automatically disables those desktop effects; environment materials, contact-shadow textures and instanced foliage remain.
+The service recess, 3.6 m ceiling, 40 m upper-floor datum, city and assumed Vidhana Soudha location still need source/site verification. Product and visitor-relief data is illustrative, not biomechanics or commercial performance evidence. Persistence holds at most 30 local marks and 30 contributions and can be unavailable in private/restricted storage contexts.
 
-This is an improved real-time material/lighting study, not photoreal parity with the concept renders. Full baked indirect illumination, photo-quality furniture/shoes, scanned plants, crowds, and georeferenced exterior detail remain outside this first Threshold pass. Other zones retain their initial furniture geometry, though shared materials and the exterior benefit globally. PDF image composition differs from the CAD layout; no columns were moved to force an image match. The stated westward Threshold sightline also intersects the specified west-wing column at CAD (3.8, 39.9), so the Landmark review camera is in the Arena rather than claiming that sightline is unobstructed.
+The optional prototype is not the complete assignment submission. The final 16:9 PDF, maximum 20 slides, still needs the user's reviewed reasoning and AI-tool disclosure. The six required sections and current evidence are mapped in `docs/brief-alignment.md`.
 
-Updated `world.glb` contains the default visible geometry and standard materials, including the new botanical instances and local textures. Desktop planar reflections, shader sky, dynamic shadow maps and the viewer's lighting are rendering features and are not baked into the GLB. Imported appearance depends on the destination viewer's environment and support for `EXT_mesh_gpu_instancing`.
+## Assets, provenance and dependency scope
 
-Asset provenance and license details are in `assets/README.md`; live check results and camera metadata are in `evidence/verification.json`. Original source snapshot, model and images are retained in `evidence/`.
+Three.js **0.180.0** is pinned and locally vendored under its MIT license; package identity/integrity is in `vendor/provenance.json`. This revision introduces no package installation, lifecycle hook, auth service or backend. The SVG and GLTF loaders/utilities are from the same reviewed package; the GLTF loader's utility import is adjusted for the vendor layout and one upstream SVG-loader comment has normalized indentation. The static checker also verifies local references.
+
+Local wood, concrete and sunset HDR assets are from Poly Haven under CC0; URLs and SHA256 hashes are in `assets/provenance.json`. Surface maps are regraded in the browser to suit the material study. Procedural leaf, terrazzo, poster, contact-shadow and façade textures are created in code. Google Fonts is optional, with system fallbacks.
+
+The adidas wordmark comes from the official annual-report header; `assets/adidas-wordmark-provenance.json` records its source/hash. It remains an adidas trademark, is not covered by CC0, and does not imply client approval or affiliation. Logos were added after the user's explicit instruction superseded the initial no-logo concept restriction.
+
+This is a bounded manual dependency review, not a completed automated CVE/malware audit. No private brief, CAD, personal pitch materials or credentials are published in the repository.

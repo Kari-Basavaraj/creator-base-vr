@@ -50,13 +50,13 @@ export async function upgradeThreshold({scene,world,renderer,M,floor,sky,hemi,su
   for(const o of [...world.children])if(o.isMesh&&o.material===M.glow&&o.geometry.type==='BoxGeometry'&&o.position.y<.04)world.remove(o);
   const route=new T.CurvePath();const p=(x,y)=>new T.Vector3(x,.022,-y);
   route.add(new T.LineCurve3(p(31.4,30),p(31.4,41.4)));
-  route.add(new T.CubicBezierCurve3(p(31.4,41.4),p(31.4,42.8),p(30.28,43.9),p(28.9,43.9)));
-  route.add(new T.LineCurve3(p(28.9,43.9),p(18.6,43.9)));
+  route.add(new T.CubicBezierCurve3(p(31.4,41.4),p(31.4,42.5),p(30.28,43.2),p(28.9,43.2)));
+  route.add(new T.LineCurve3(p(28.9,43.2),p(18.6,43.2)));
   const points=route.getPoints(200);
   function ribbon(width,material){const v=[],uv=[],indices=[];points.forEach((p,i)=>{const before=points[Math.max(i-1,0)],after=points[Math.min(i+1,points.length-1)],dx=after.x-before.x,dz=after.z-before.z,l=Math.hypot(dx,dz),nx=-dz/l*width/2,nz=dx/l*width/2;v.push(p.x+nx,p.y,p.z+nz,p.x-nx,p.y,p.z-nz);uv.push(i/200,0,i/200,1);if(i<points.length-1){const j=i*2;indices.push(j,j+2,j+1,j+1,j+2,j+3);}});const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(v,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const o=new T.Mesh(g,material);o.name='Visitor light — curved route';art.add(o);return o;}
   const strip=ribbon(.08,new T.MeshBasicMaterial({color:'#ff662c',toneMapped:false,side:T.DoubleSide}));
   const gc=document.createElement('canvas');gc.width=4;gc.height=128;const gx=gc.getContext('2d'),gg=gx.createLinearGradient(0,0,0,128);gg.addColorStop(0,'rgba(255,255,255,0)');gg.addColorStop(.5,'rgba(255,255,255,1)');gg.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gg;gx.fillRect(0,0,4,128);const glowTexture=new T.CanvasTexture(gc);const glowMaterials=[];for(const [w,alpha] of [[.16,.14],[.3,.065],[.6,.025]]){const material=new T.MeshBasicMaterial({color:'#ff5a1f',map:glowTexture,transparent:true,opacity:alpha,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending});glowMaterials.push(material);const o=ribbon(w,material);o.position.y=.001;}
-  box(31.45,36,.024,3.7,.08,.008,M.glow);
+  const startMarker=box(31.45,36,.024,3.7,.08,.008,M.light);
 
   // Local contact-shadow stamps remain available in VR and standard GLB viewers.
   const ac=document.createElement('canvas');ac.width=ac.height=128;const ax=ac.getContext('2d'),ag=ax.createRadialGradient(64,64,7,64,64,64);ag.addColorStop(0,'rgba(27,21,16,.45)');ag.addColorStop(.38,'rgba(27,21,16,.24)');ag.addColorStop(1,'rgba(27,21,16,0)');ax.fillStyle=ag;ax.fillRect(0,0,128,128);
@@ -117,6 +117,10 @@ export async function upgradeThreshold({scene,world,renderer,M,floor,sky,hemi,su
   const reflector=new Reflector(new T.PlaneGeometry(27.2,9.8),{textureWidth:1024,textureHeight:512,clipBias:.005,multisample:0,color:0xa89c8d});reflector.name='Desktop polished-floor reflection';reflector.rotation.x=-Math.PI/2;reflector.position.set(32.1,.011,-40.47);reflector.material.transparent=true;reflector.material.depthWrite=false;
   reflector.material.fragmentShader=reflector.material.fragmentShader.replace('vec4 base = texture2DProj( tDiffuse, vUv );',`vec2 uv=vUv.xy/vUv.w;vec4 base=texture2D(tDiffuse,uv)*.28;for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)base+=texture2D(tDiffuse,uv+vec2(float(x)*.0025,float(y)*.004))*.08;`).replace('blendOverlay( base.rgb, color ), 1.0','blendOverlay( base.rgb, color ), 0.12');
   scene.add(reflector);
+  const arrivalUniform={value:-1};
+  for(const material of [strip.material,...glowMaterials]){material.onBeforeCompile=shader=>{shader.uniforms.uArrival=arrivalUniform;shader.vertexShader='varying float vJourneyU;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvJourneyU=uv.x;');shader.fragmentShader='uniform float uArrival;varying float vJourneyU;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\nif(uArrival<0.){gl_FragColor.rgb*=.12;}else{float gate=1.-smoothstep(uArrival-.03,uArrival+.03,vJourneyU);gl_FragColor.rgb*=.08+.92*gate;}');};material.customProgramCacheKey=()=> 'visitor-arrival-v3';material.needsUpdate=true;}
+  function setArrival(active,progress=0){arrivalUniform.value=active?.36+.64*progress:-1;strip.material.color.set(active?'#ff662c':'#c8c1b3');glowMaterials.forEach((material,i)=>material.opacity=active?[.14,.065,.025][i]:0);startMarker.material=active?M.glow:M.light;}
+  setArrival(false);
   let cinematic=true,isDay=false;
   function setQuality(value){cinematic=value;reflector.visible=value&&!renderer.xr.isPresenting;sun.castShadow=value;renderer.shadowMap.needsUpdate=true;}
   renderer.xr.addEventListener('sessionstart',()=>{reflector.visible=false;sun.castShadow=false;renderer.setPixelRatio(1);});renderer.xr.addEventListener('sessionend',()=>{setQuality(cinematic);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));});
@@ -125,5 +129,5 @@ export async function upgradeThreshold({scene,world,renderer,M,floor,sky,hemi,su
   // Receive contact shadows on the entire model; only nearby architecture casts.
   world.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;if(o.material.transparent||o.material.emissiveIntensity>1)return;if(o.isInstancedMesh)return;const p=o.getWorldPosition(new T.Vector3());if(p.x>18&&p.x<46&&p.z<-35&&p.z>-46&&p.y<3.45)o.castShadow=true;});floor.receiveShadow=true;
   const report={textureSources:['Poly Haven / wood_table_001','Poly Haven / concrete_floor_02','Poly Haven / venice_sunset'],leaves:leafItems.length,branches:branchItems.length,facadeWindowsPerAtlas:200,quality:'desktop cinematic / XR fallback'};
-  await Promise.allSettled(tasks);return {report,reflector,lighting,setQuality,get cinematic(){return cinematic},get daylight(){return isDay}};
+  await Promise.allSettled(tasks);return {report,reflector,lighting,setQuality,setArrival,get cinematic(){return cinematic},get daylight(){return isDay}};
 }

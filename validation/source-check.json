@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "sourceFilesChecked": 17,
+  "glb": {
+    "version": 2,
+    "triangles": 254226,
+    "bytes": 8619172,
+    "sha256": "778760871385cc9f1d47aee5cdd8237e2d02068409c4e48645e0b0fe605731f3",
+    "wordmarks": 5,
+    "audienceSeats": 84,
+    "embeddedImages": 47
+  },
+  "errors": [],
+  "scope": "Syntax, local references, asset hashes and GLB structure only; see browser checks for behavior."
+}

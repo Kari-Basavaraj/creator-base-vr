@@ -1,0 +1,212 @@
+{
+  "base": "http://localhost:8089",
+  "assertions": [
+    {
+      "name": "triangle budget",
+      "passed": true,
+      "detail": 261464
+    },
+    {
+      "name": "five branded locations",
+      "passed": true
+    },
+    {
+      "name": "84 modeled seats",
+      "passed": true
+    },
+    {
+      "name": "staff portal traversable",
+      "passed": true,
+      "detail": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "exact journey spawn",
+      "passed": true,
+      "detail": [
+        31.4,
+        0,
+        -30
+      ]
+    },
+    {
+      "name": "start line responds to crossing",
+      "passed": true
+    },
+    {
+      "name": "complete visitor route collision samples",
+      "passed": true,
+      "detail": 428
+    },
+    {
+      "name": "stage clears fixed column",
+      "passed": true
+    },
+    {
+      "name": "physical-proxy product trigger",
+      "passed": true,
+      "detail": {
+        "active": true,
+        "phase": 0
+      }
+    },
+    {
+      "name": "20-second construction phase",
+      "passed": true
+    },
+    {
+      "name": "two concepts available for comparison",
+      "passed": true,
+      "detail": [
+        "layers",
+        "community"
+      ]
+    },
+    {
+      "name": "private suite opens on approach",
+      "passed": true,
+      "detail": {
+        "open": 0.9825706550170903,
+        "pass": true
+      }
+    },
+    {
+      "name": "private suite closes away from threshold",
+      "passed": true
+    },
+    {
+      "name": "maker contribution",
+      "passed": true
+    },
+    {
+      "name": "studio rehearsal triggered",
+      "passed": true
+    },
+    {
+      "name": "all five arena arrangements",
+      "passed": true
+    },
+    {
+      "name": "illustrative mark raises and saves",
+      "passed": true,
+      "detail": {
+        "amount": 1,
+        "id": "M-AJO1BR",
+        "history": 1
+      }
+    },
+    {
+      "name": "mark persists after reload",
+      "passed": true
+    },
+    {
+      "name": "maker wall persists after reload",
+      "passed": true
+    },
+    {
+      "name": "season refresh isolates marks without rebuilding",
+      "passed": true,
+      "detail": {
+        "season": "s02",
+        "mark": 0,
+        "history": 1
+      }
+    },
+    {
+      "name": "previous season mark restored",
+      "passed": true
+    },
+    {
+      "name": "host reset retains history",
+      "passed": true
+    },
+    {
+      "name": "daylight independent of arena mode",
+      "passed": true
+    },
+    {
+      "name": "dusk restored",
+      "passed": true
+    },
+    {
+      "name": "lightweight fallback",
+      "passed": true
+    },
+    {
+      "name": "mobile panel fits viewport",
+      "passed": true,
+      "detail": {
+        "overflow": false,
+        "panel": true
+      }
+    },
+    {
+      "name": "WebGL clean",
+      "passed": true
+    }
+  ],
+  "model": {
+    "triangles": 261464,
+    "marks": 5,
+    "staff": [
+      true,
+      true,
+      true
+    ],
+    "seats": 84
+  },
+  "route": {
+    "samples": 428,
+    "bad": []
+  },
+  "prototypeOnly": [
+    "No real stride/body capture",
+    "No real adidas product metrics",
+    "Browser-local persistence only",
+    "Studio rehearsal does not record media",
+    "84-seat layout not a code compliance or occupied-sightline certification",
+    "Quest hardware and comfort not tested"
+  ],
+  "revision": "experience-v3",
+  "date": "2026-11-03",
+  "takeHomeAndRehearsal": {
+    "shortlistExport": null,
+    "markExport": null,
+    "audio": "Sound: on",
+    "rehearsal": true,
+    "glbExport": null,
+    "filename": "Creator-Base-Experience-v3.glb",
+    "before": {
+      "shortlist": "layers,community",
+      "mode": "launch",
+      "mark": 1
+    },
+    "after": {
+      "shortlist": "layers,community",
+      "mode": "launch",
+      "mark": 1,
+      "suspended": false
+    }
+  },
+  "independentGLBImport": {
+    "marks": 5,
+    "seats": 84,
+    "webgl": 0
+  },
+  "finalVisualChecks": {
+    "imported": {
+      "marks": 5,
+      "webgl": 0
+    },
+    "model": {
+      "triangles": 261464,
+      "marks": 5
+    },
+    "mobile": {
+      "overflow": false
+    }
+  }
+}

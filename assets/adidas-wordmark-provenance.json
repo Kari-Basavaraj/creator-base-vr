@@ -1,0 +1,9 @@
+{
+  "source": "https://report.adidas-group.com/2025/en/",
+  "element": "header-logo__image, aria-label adidas Logo",
+  "asset": "adidas-wordmark.svg",
+  "sha256": "1b59121e35350c91d5bcc973cfb1c716c9e97ba4a8bbc9153d6383db910f77d8",
+  "retrieved": "2026-11-03",
+  "rights": "adidas trademark; official website artwork used in the user-requested adidas architectural concept; client approval not asserted",
+  "validation": "svg/path elements only; no scripts, event handlers or external references"
+}
