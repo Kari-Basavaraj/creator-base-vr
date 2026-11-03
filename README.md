@@ -89,3 +89,7 @@ This is a bounded manual dependency review, not a completed automated CVE/malwar
 ## XR detail v4
 
 See [detail pass and review views](docs/DETAIL-V4.md). Includes original procedural footwear, clearer Imprint relief, culture-night mode, seating storage proposal and maker/studio details. Use `?view=lab&v=detail-v4` or `?view=culture&v=detail-v4` to inspect. The export is now named `Creator-Base-Detail-v4.glb`; the checked-in file remains `world.glb`. Presentation files are managed separately.
+
+## Vidhana Soudha exterior v5
+
+[Reference-led landmark model](docs/LANDMARK-V5.md) replaces the earlier rough massing. Review `?view=landmark&v=landmark-v5`; exported filename is `Creator-Base-Landmark-v5.glb`. The exterior is an assumed concept outlook, not a surveyed site reconstruction.
