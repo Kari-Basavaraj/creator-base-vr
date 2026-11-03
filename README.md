@@ -85,3 +85,7 @@ Local wood, concrete and sunset HDR assets are from Poly Haven under CC0; URLs a
 The adidas wordmark comes from the official annual-report header; `assets/adidas-wordmark-provenance.json` records its source/hash. It remains an adidas trademark, is not covered by CC0, and does not imply client approval or affiliation. Logos were added after the user's explicit instruction superseded the initial no-logo concept restriction.
 
 This is a bounded manual dependency review, not a completed automated CVE/malware audit. No private brief, CAD, personal pitch materials or credentials are published in the repository.
+
+## XR detail v4
+
+See [detail pass and review views](docs/DETAIL-V4.md). Includes original procedural footwear, clearer Imprint relief, culture-night mode, seating storage proposal and maker/studio details. Use `?view=lab&v=detail-v4` or `?view=culture&v=detail-v4` to inspect. The export is now named `Creator-Base-Detail-v4.glb`; the checked-in file remains `world.glb`. Presentation files are managed separately.
