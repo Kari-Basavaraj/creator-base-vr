@@ -1,5 +1,5 @@
 import {addVisitors} from './visitors.js';
-import { createQuestControls } from './quest-controls.js';
+import { createQuestControls } from './quest-controls.js?v=quest-360';
 import {buildLandmark} from './landmark.js?v=landmark-v5';
 import {makeFootwear,makeSole} from './footwear.js?v=landmark-v5';
 import * as T from 'three';

@@ -24,7 +24,7 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
   const offset = new T.Vector3();
   const up = new T.Vector3(0, 1, 0);
   let smoothMove = true;
-  let smoothTurn = false;
+  let smoothTurn = true;
   let haptics = true;
   let teleportOwner = null;
   let hovered = -1;
