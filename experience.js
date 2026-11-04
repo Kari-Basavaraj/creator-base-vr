@@ -1,4 +1,4 @@
-import {createSpatialAudio} from './spatial-audio.js?v=quest-stable';
+import {createSpatialAudio} from './spatial-audio.js?v=room-audio';
 import * as T from 'three';
 import {SEASONS,PRODUCTS,PEOPLE,ZONES,zoneAt} from './season-data.js?v=experience-v3';
 
@@ -34,7 +34,7 @@ export function createExperience({viewerPose,world,scene,renderer,rig,camera,sho
  $('#season').onchange=e=>setSeason(e.target.value);$('#arena-layout').onchange=e=>setArenaMode(e.target.value);$('#maker-material').onchange=e=>{selectedMaterial=e.target.value;programme.makerSample.material=selectedMaterial==='Knit'?M.felt:selectedMaterial==='Foam'?M.white:M.black;};$('#make-contribution').onclick=contribute;$('#studio-rehearsal').onclick=rehearse;
  $('#replay-mark').onclick=()=>{onReplayMark();visit('imprint');notify('Step onto the pad for a new illustrative relief.');};$('#take-mark').onclick=exportMark;$('#reset-demo').onclick=reset;
  $('#sound').onclick=()=>toggleSound();
- function visit(key){sound.resetStride();const z=ZONES[key];if(!z)return;goTo(...z.point);$('#experience-panel').hidden=true;log('visit',key);}
+ function visit(key){const z=ZONES[key];if(!z)return;goTo(...z.point);$('#experience-panel').hidden=true;log('visit',key);}
  function start(id=state.persona){state.persona=PEOPLE[id]?id:'kabir';save();started=performance.now();visited.clear();arrivalAt=0;lastY=30;log('journey-start',id);if(id==='meera'){goTo(45.18,29.6,49,29.6);visited.add('team');}else goTo(31.4,30,31.4,40);$('#experience-panel').hidden=true;notify(`${person().name}'s route · ${person().target}-minute design target`);refresh();}
  function onProductLift(s){for(const other of shoes)if(other!==s){other.until=0;other.storyAt=0;other.shoe.position.y=1.13;other.halo.visible=false;other.layers.forEach(l=>l.visible=false);}activeProduct=shoes.indexOf(s);if(activeProduct<0)return;s.storyAt=performance.now();visited.add('lab');log('product-lift',PRODUCTS[activeProduct].id);if(!renderer.xr.isPresenting)open('product');refresh();}
  function shortlist(){if(activeProduct<0){notify('Lift a shoe in the Lab first.');return;}const id=PRODUCTS[activeProduct].id;if(state.shortlist.includes(id)){state.shortlist=state.shortlist.filter(x=>x!==id);}else if(state.shortlist.length<3)state.shortlist.push(id);else{notify('Keep up to three concepts for a clear comparison.');return;}save();log('shortlist',id);refreshComparison();refresh();}
@@ -58,13 +58,13 @@ export function createExperience({viewerPose,world,scene,renderer,rig,camera,sho
  const audioDirection = new T.Vector3(), audioPosition = new T.Vector3();
  async function toggleSound() {
    try {
-     const enabled = await sound.toggle();
+     const enabled = await sound.toggle(currentZone);
      $('#sound').textContent = enabled ? 'Sound: on' : 'Sound: off';
    } catch { notify('Audio is not available in this browser.'); }
  }
  async function enableSound() {
    try {
-     const enabled = await sound.enable();
+     const enabled = await sound.enable(currentZone);
      $('#sound').textContent = enabled ? 'Sound: on' : 'Sound: off';
    } catch { notify('Tap Sound before entering VR to enable audio.'); }
  }
@@ -79,7 +79,7 @@ export function createExperience({viewerPose,world,scene,renderer,rig,camera,sho
   const view = renderer.xr.isPresenting ? viewerPose : camera;
   view.getWorldDirection(audioDirection);
   view.getWorldPosition(audioPosition);
-  sound.tick(currentZone, audioPosition, audioDirection, dt, options.walking && !options.overview);
+  sound.tick(currentZone, audioPosition, audioDirection);
   threshold.updateFootprints(position, !!arrivalAt && options.walking && !options.overview, dt);
   if(now-lastUI>500){lastUI=now;$('#zone-name').textContent=ZONES[currentZone]?.name||currentZone;$('#zone-mood').textContent=ZONES[currentZone]?.mood||'';$('#zone-action').textContent=ZONES[currentZone]?.action||'';$('#visit-clock').textContent=started?`${Math.floor((now-started)/60000)}:${String(Math.floor((now-started)/1000)%60).padStart(2,'0')} elapsed / ${person().target}m target`:'Explore freely / choose a journey';document.body.classList.toggle('quiet-zone',['fuel','team','suite','studio'].includes(currentZone));const beat=['lab','path'].includes(currentZone)?1:['arena','imprint'].includes(currentZone)?2:currentZone==='fuel'?3:0;document.querySelectorAll('.journey button[data-stop]').forEach(b=>b.classList.toggle('active',Number(b.dataset.stop)===beat));if(!$('#experience-panel').hidden)refresh();}
  }

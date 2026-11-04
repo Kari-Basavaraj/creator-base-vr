@@ -9,9 +9,8 @@ const rooms = {
 };
 
 export function createSpatialAudio(zones) {
-  let context, master, noise, activeZone, enabled = false, pending = false;
+  let context, master, noise, activeZone, enabled = false, requested = false, revision = 0;
   const channels = new Map();
-  let lastX, lastZ, stride = 0, nextStep = 0;
   function init() {
     context = new AudioContext();
     master = context.createGain();
@@ -26,6 +25,10 @@ export function createSpatialAudio(zones) {
     const [frequency, cutoff, volume, rate] = rooms[key];
     const tone = context.createOscillator();
     tone.frequency.value = frequency;
+    const overtone = context.createOscillator();
+    overtone.frequency.value = frequency * 3;
+    const overtoneGain = context.createGain();
+    overtoneGain.gain.value = .28;
     const texture = context.createBufferSource();
     texture.buffer = noise;
     texture.loop = true;
@@ -35,13 +38,14 @@ export function createSpatialAudio(zones) {
     const textureGain = context.createGain();
     textureGain.gain.value = .38;
     const bed = context.createGain();
-    bed.gain.value = .25;
+    bed.gain.value = .55;
     const pulse = context.createOscillator();
     pulse.frequency.value = rate;
     const depth = context.createGain();
     depth.gain.value = .1;
     pulse.connect(depth).connect(bed.gain);
     tone.connect(bed);
+    overtone.connect(overtoneGain).connect(bed);
     texture.connect(filter).connect(textureGain).connect(bed);
     const gain = context.createGain();
     gain.gain.value = 0;
@@ -52,56 +56,38 @@ export function createSpatialAudio(zones) {
     pan.positionZ.value = -y - 2;
     pan.rolloffFactor = .35;
     pan.refDistance = 2;
-    bed.connect(gain).connect(pan).connect(master);
-    tone.start(); texture.start(); pulse.start();
+    // Keep a room-wide bed audible while the emitter adds directional detail.
+    const roomBed = context.createGain();
+    roomBed.gain.value = .7;
+    bed.connect(gain);
+    gain.connect(roomBed).connect(master);
+    gain.connect(pan).connect(master);
+    tone.start(); overtone.start(); texture.start(); pulse.start();
     const channel = {gain, volume};
     channels.set(key, channel);
     return channel;
   }
-  function footstep(zone) {
-    const now = context.currentTime;
-    const soft = ['fuel', 'team', 'studio', 'suite'].includes(zone);
-    const scuff = context.createBufferSource();
-    scuff.buffer = noise;
-    const filter = context.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = (soft ? 580 : 1900) * (.8 + Math.random() * .4);
-    const envelope = context.createGain();
-    envelope.gain.setValueAtTime(.001, now);
-    envelope.gain.linearRampToValueAtTime(soft ? .08 : .14, now + .012);
-    envelope.gain.exponentialRampToValueAtTime(.001, now + .18);
-    scuff.connect(filter).connect(envelope).connect(master);
-    scuff.start(now, Math.random());
-    scuff.stop(now + .19);
-    const heel = context.createOscillator();
-    const impact = context.createGain();
-    heel.frequency.setValueAtTime(115 + Math.random() * 28, now);
-    heel.frequency.exponentialRampToValueAtTime(49, now + .075);
-    impact.gain.setValueAtTime(soft ? .021 : .04, now);
-    impact.gain.exponentialRampToValueAtTime(.001, now + .1);
-    heel.connect(impact).connect(master);
-    heel.start(now);
-    heel.stop(now + .11);
+  async function setEnabled(target, zone) {
+    requested = target;
+    const request = ++revision;
+    if (!context) init();
+    if (target && context.state !== 'running') await context.resume();
+    if (request !== revision) return enabled;
+    enabled = target && context.state === 'running';
+    master.gain.setTargetAtTime(enabled ? 2.4 : 0, context.currentTime, .14);
+    if (enabled) selectRoom(zone);
+    return enabled;
   }
-  async function setEnabled(target) {
-    if (pending) return enabled;
-    pending = true;
-    try {
-      if (!context) init();
-      if (target && context.state !== 'running') await context.resume();
-      enabled = target && context.state === 'running';
-      master.gain.setTargetAtTime(enabled ? .65 : 0, context.currentTime, .14);
-      resetStride();
-      return enabled;
-    } finally { pending = false; }
+  function selectRoom(zone) {
+    if (zone === activeZone || !rooms[zone]) return;
+    const next = roomChannel(zone);
+    for (const channel of channels.values()) {
+      channel.gain.gain.setTargetAtTime(channel === next ? channel.volume : 0, context.currentTime, .56);
+    }
+    activeZone = zone;
   }
-  function resetStride() {
-    lastX = lastZ = undefined;
-    stride = 0;
-  }
-  function tick(zone, position, direction, dt, walking) {
+  function tick(zone, position, direction) {
     if (!enabled) return;
-    const now = context.currentTime;
     const listener = context.listener;
     listener.positionX.value = position.x;
     listener.positionY.value = position.y;
@@ -109,24 +95,11 @@ export function createSpatialAudio(zones) {
     listener.forwardX.value = direction.x;
     listener.forwardY.value = direction.y;
     listener.forwardZ.value = direction.z;
-    if (zone !== activeZone && rooms[zone]) {
-      const next = roomChannel(zone);
-      for (const channel of channels.values()) {
-        channel.gain.gain.setTargetAtTime(channel === next ? channel.volume : 0, now, .56);
-      }
-      activeZone = zone;
-    }
-    if (!walking) { resetStride(); return; }
-    const distance = lastX === undefined ? 0 : Math.hypot(position.x - lastX, position.z - lastZ);
-    lastX = position.x;
-    lastZ = position.z;
-    if (distance > Math.max(.18, dt * 3.5)) { stride = 0; return; }
-    stride += distance;
-    if (stride >= .68 && now >= nextStep) {
-      stride -= .68;
-      nextStep = now + .24;
-      footstep(zone);
-    }
+    selectRoom(zone);
   }
-  return {toggle: () => setEnabled(!enabled), enable: () => setEnabled(true), tick, resetStride};
+  return {
+    toggle: zone => setEnabled(context?.state === 'running' ? !requested : true, zone),
+    enable: zone => setEnabled(true, zone),
+    tick
+  };
 }

@@ -8,7 +8,7 @@ import { GLTFExporter } from './vendor/GLTFExporter.js';
 import { upgradeThreshold } from './threshold.js?v=quest-stable';
 import { addBranding } from './branding.js?v=landmark-v5';
 import { buildProgramme } from './programme.js?v=landmark-v5';
-import { createExperience } from './experience.js?v=quest-stable';
+import { createExperience } from './experience.js?v=room-audio';
 const $=s=>document.querySelector(s), scene=new T.Scene(),world=new T.Group();world.name='Creator Base — 1:1 CAD model';scene.add(world);
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local-floor');renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;$('#world').append(renderer.domElement);
 const camera=new T.PerspectiveCamera(65,innerWidth/innerHeight,.07,1600),rig=new T.Group();rig.add(camera);scene.add(rig);camera.position.y=1.6;
