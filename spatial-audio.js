@@ -1,12 +1,43 @@
-// Each room has its own frequency, texture and slow pulse.
+// Filter frequency, level and slow modulation for each section.
 const rooms = {
-  lobby: [55, 160, .032, .24], threshold: [82, 480, .047, .46],
-  lounge: [110, 760, .033, .31], lab: [165, 1100, .030, .8],
-  path: [98, 640, .044, .65], fuel: [73, 330, .035, .19],
-  arena: [49, 570, .060, .92], imprint: [130, 870, .042, .23],
-  workshop: [146, 1450, .036, .71], studio: [65, 235, .019, .16],
-  suite: [92, 300, .016, .13], team: [61, 210, .018, .12]
+  lobby: [180, .055, .19], threshold: [480, .083, .24],
+  lounge: [760, .069, .21], lab: [1100, .065, .28],
+  path: [640, .074, .26], fuel: [330, .059, .14],
+  arena: [570, .095, .32], imprint: [870, .075, .17],
+  workshop: [1450, .078, .31], studio: [235, .039, .12],
+  suite: [300, .036, .11], team: [210, .040, .10]
 };
+
+function startMusic(context, output) {
+  // Original four-chord pad. Overlapping envelopes carry the last chord into the first.
+  const chords = [[48, 55, 59, 62], [45, 52, 55, 59], [41, 48, 52, 55], [43, 50, 57, 62]];
+  const rate = 16000;
+  const chordSeconds = 8;
+  const duration = chords.length * chordSeconds;
+  const buffer = context.createBuffer(1, rate * duration, rate);
+  const samples = buffer.getChannelData(0);
+  for (const [index, chord] of chords.entries()) {
+    const frequencies = chord.map(note => 440 * 2 ** ((note - 69) / 12));
+    for (let i = 0; i < 10 * rate; i++) {
+      const time = i / rate;
+      const envelope = Math.min(1, time / 2, (10 - time) / 2);
+      const weight = .5 - .5 * Math.cos(Math.PI * envelope);
+      let sample = 0;
+      for (const frequency of frequencies) {
+        const phase = 2 * Math.PI * frequency * time;
+        sample += Math.sin(phase) + .15 * Math.sin(2 * phase);
+      }
+      samples[(index * chordSeconds * rate + i) % samples.length] += sample * weight * .008;
+    }
+  }
+  const music = context.createBufferSource();
+  music.buffer = buffer;
+  music.loop = true;
+  const gain = context.createGain();
+  gain.gain.value = .46;
+  music.connect(gain).connect(output);
+  music.start();
+}
 
 export function createSpatialAudio(zones) {
   let context, master, noise, activeZone, enabled = false, requested = false, revision = 0;
@@ -16,27 +47,23 @@ export function createSpatialAudio(zones) {
     master = context.createGain();
     master.gain.value = 0;
     master.connect(context.destination);
+    startMusic(context, master);
     noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
     const samples = noise.getChannelData(0);
     for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
   }
   function roomChannel(key) {
     if (channels.has(key)) return channels.get(key);
-    const [frequency, cutoff, volume, rate] = rooms[key];
-    const tone = context.createOscillator();
-    tone.frequency.value = frequency;
-    const overtone = context.createOscillator();
-    overtone.frequency.value = frequency * 3;
-    const overtoneGain = context.createGain();
-    overtoneGain.gain.value = .28;
+    const [cutoff, volume, rate] = rooms[key];
     const texture = context.createBufferSource();
     texture.buffer = noise;
     texture.loop = true;
     const filter = context.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = cutoff;
+    filter.Q.value = .45;
     const textureGain = context.createGain();
-    textureGain.gain.value = .38;
+    textureGain.gain.value = 1;
     const bed = context.createGain();
     bed.gain.value = .55;
     const pulse = context.createOscillator();
@@ -44,8 +71,6 @@ export function createSpatialAudio(zones) {
     const depth = context.createGain();
     depth.gain.value = .1;
     pulse.connect(depth).connect(bed.gain);
-    tone.connect(bed);
-    overtone.connect(overtoneGain).connect(bed);
     texture.connect(filter).connect(textureGain).connect(bed);
     const gain = context.createGain();
     gain.gain.value = 0;
@@ -62,7 +87,7 @@ export function createSpatialAudio(zones) {
     bed.connect(gain);
     gain.connect(roomBed).connect(master);
     gain.connect(pan).connect(master);
-    tone.start(); overtone.start(); texture.start(); pulse.start();
+    texture.start(); pulse.start();
     const channel = {gain, volume};
     channels.set(key, channel);
     return channel;
@@ -74,7 +99,7 @@ export function createSpatialAudio(zones) {
     if (target && context.state !== 'running') await context.resume();
     if (request !== revision) return enabled;
     enabled = target && context.state === 'running';
-    master.gain.setTargetAtTime(enabled ? 2.4 : 0, context.currentTime, .14);
+    master.gain.setTargetAtTime(enabled ? 1.5 : 0, context.currentTime, .14);
     if (enabled) selectRoom(zone);
     return enabled;
   }

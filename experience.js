@@ -1,4 +1,4 @@
-import {createSpatialAudio} from './spatial-audio.js?v=room-audio';
+import {createSpatialAudio} from './spatial-audio.js?v=soft-music';
 import * as T from 'three';
 import {SEASONS,PRODUCTS,PEOPLE,ZONES,zoneAt} from './season-data.js?v=experience-v3';
 
