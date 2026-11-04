@@ -52,6 +52,56 @@ export async function upgradeThreshold({scene,world,renderer,M,floor,sky,hemi,su
   route.add(new T.LineCurve3(p(31.4,30),p(31.4,41.4)));
   route.add(new T.CubicBezierCurve3(p(31.4,41.4),p(31.4,42.5),p(30.28,43.2),p(28.9,43.2)));
   route.add(new T.LineCurve3(p(28.9,43.2),p(18.6,43.2)));
+  const soleCanvas = document.createElement('canvas');
+  soleCanvas.width = 64;
+  soleCanvas.height = 128;
+  const sole = soleCanvas.getContext('2d');
+  sole.fillStyle = '#fff';
+  sole.beginPath();
+  sole.ellipse(32, 41, 20, 32, -.13, 0, 2 * Math.PI);
+  sole.ellipse(31, 96, 14, 20, .04, 0, 2 * Math.PI);
+  sole.fill();
+  sole.globalCompositeOperation = 'destination-out';
+  for (let y = 28; y < 114; y += 9) sole.fillRect(9, y, 46, 2);
+  const soleTexture = new T.CanvasTexture(soleCanvas);
+  const soleGeometry = new T.PlaneGeometry(.16, .32);
+  soleGeometry.rotateX(-Math.PI / 2);
+  const routeLength = route.getLength();
+  const samples = route.getSpacedPoints(Math.ceil(routeLength / .22));
+  const footprints = Array.from({length: 8}, (_, i) => {
+    const material = new T.MeshBasicMaterial({
+      map: soleTexture, color: '#ff6426', transparent: true, opacity: 0,
+      depthWrite: false, toneMapped: false
+    });
+    const mesh = new T.Mesh(soleGeometry, material);
+    mesh.name = 'Live visitor footprint ' + (i + 1);
+    mesh.visible = false;
+    scene.add(mesh);
+    return mesh;
+  });
+  function updateFootprints(position, active, dt) {
+    let closest = 0, distance = Infinity;
+    if (active) samples.forEach((p, i) => {
+      const d = Math.hypot(position.x - p.x, position.z - p.z);
+      if (d < distance) { distance = d; closest = i; }
+    });
+    for (let i = 0; i < footprints.length; i++) {
+      const mesh = footprints[i];
+      const start = Math.floor((closest / (samples.length - 1) * routeLength) / .64) + 2;
+      const step = start + i;
+      const u = step * .64 / routeLength;
+      const visible = active && distance < 1.65 && u < 1;
+      if (visible) {
+        const p = route.getPoint(u);
+        const tangent = route.getTangent(u);
+        const side = step % 2 ? .19 : -.19;
+        mesh.position.set(p.x - tangent.z * side, .028, p.z + tangent.x * side);
+        mesh.rotation.y = Math.atan2(-tangent.x, -tangent.z);
+      }
+      mesh.material.opacity = T.MathUtils.damp(mesh.material.opacity, visible ? .68 - i * .065 : 0, 8, dt);
+      mesh.visible = mesh.material.opacity > .012;
+    }
+  }
   const points=route.getPoints(200);
   function ribbon(width,material){const v=[],uv=[],indices=[];points.forEach((p,i)=>{const before=points[Math.max(i-1,0)],after=points[Math.min(i+1,points.length-1)],dx=after.x-before.x,dz=after.z-before.z,l=Math.hypot(dx,dz),nx=-dz/l*width/2,nz=dx/l*width/2;v.push(p.x+nx,p.y,p.z+nz,p.x-nx,p.y,p.z-nz);uv.push(i/200,0,i/200,1);if(i<points.length-1){const j=i*2;indices.push(j,j+2,j+1,j+1,j+2,j+3);}});const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(v,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const o=new T.Mesh(g,material);o.name='Visitor light — curved route';art.add(o);return o;}
   const strip=ribbon(.08,new T.MeshBasicMaterial({color:'#ff662c',toneMapped:false,side:T.DoubleSide}));
@@ -121,5 +171,5 @@ export async function upgradeThreshold({scene,world,renderer,M,floor,sky,hemi,su
   // Receive contact shadows on the entire model; only nearby architecture casts.
   world.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;if(o.material.transparent||o.material.emissiveIntensity>1)return;if(o.isInstancedMesh)return;const p=o.getWorldPosition(new T.Vector3());if(p.x>18&&p.x<46&&p.z<-35&&p.z>-46&&p.y<3.45)o.castShadow=true;});floor.receiveShadow=true;
   const report={textureSources:['Poly Haven / wood_table_001','Poly Haven / concrete_floor_02','Poly Haven / venice_sunset'],leaves:leafItems.length,branches:branchItems.length,facadeWindowsPerAtlas:200,quality:'desktop cinematic / XR fallback'};
-  await Promise.allSettled(tasks);return {report,reflector,lighting,setQuality,setArrival,get cinematic(){return cinematic},get daylight(){return isDay}};
+  await Promise.allSettled(tasks);return {report,reflector,lighting,setQuality,setArrival,updateFootprints,get cinematic(){return cinematic},get daylight(){return isDay}};
 }

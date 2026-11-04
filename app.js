@@ -1,13 +1,14 @@
+import {addVisitors} from './visitors.js';
 import { createQuestControls } from './quest-controls.js';
 import {buildLandmark} from './landmark.js?v=landmark-v5';
 import {makeFootwear,makeSole} from './footwear.js?v=landmark-v5';
 import * as T from 'three';
 import { VRButton } from './vendor/VRButton.js';
 import { GLTFExporter } from './vendor/GLTFExporter.js';
-import { upgradeThreshold } from './threshold.js?v=landmark-v5';
+import { upgradeThreshold } from './threshold.js?v=spatial-v7';
 import { addBranding } from './branding.js?v=landmark-v5';
 import { buildProgramme } from './programme.js?v=landmark-v5';
-import { createExperience } from './experience.js?v=landmark-v5';
+import { createExperience } from './experience.js?v=spatial-v7';
 const $=s=>document.querySelector(s), scene=new T.Scene(),world=new T.Group();world.name='Creator Base — 1:1 CAD model';scene.add(world);
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local-floor');renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;$('#world').append(renderer.domElement);
 const camera=new T.PerspectiveCamera(65,innerWidth/innerHeight,.07,1600),rig=new T.Group();rig.add(camera);scene.add(rig);camera.position.y=1.6;
@@ -75,6 +76,7 @@ const sky=new T.Mesh(new T.SphereGeometry(1100,24,16),new T.ShaderMaterial({side
 const threshold=await upgradeThreshold({scene,world,renderer,M,floor,sky,hemi,sun,colliders});
 const branding=await addBranding(world,M);
 const programme=buildProgramme({world,scene,M,colliders,tiers,mats,stage,arenaRing});
+addVisitors(world);
 let daylight=false,event=true;function light(day){daylight=day;sky.material.uniforms.top.value.set(day?'#8dbcd2':'#626c91');sky.material.uniforms.bottom.value.set(day?'#e5e3d6':'#eebd9e');hemi.intensity=day?3:2.2;sun.intensity=day?3.8:3;sun.color.set(day?'#fff4df':'#ffdfb1');$('#day').classList.toggle('selected',day);$('#dusk').classList.toggle('selected',!day);threshold.lighting(day);landmark.lighting(day);}
 $('#quality').onclick=()=>{threshold.setQuality(!threshold.cinematic);$('#quality').textContent=threshold.cinematic?'Quality: Cinematic':'Quality: Lightweight';};
 $('#reference-view').onclick=()=>setReviewShot(0);
@@ -115,7 +117,8 @@ const questControls = createQuestControls({
     ['Discovery Lab', () => { experience.visit('lab'); questControls.reset(); }],
     ['Community Arena', () => { experience.visit('arena'); questControls.reset(); }],
     ['Imprint Wall', () => { experience.visit('imprint'); questControls.reset(); }],
-    ['Creator Studio', () => { experience.visit('studio'); questControls.reset(); }]
+    ['Creator Studio', () => { experience.visit('studio'); questControls.reset(); }],
+    ['Toggle spatial sound', () => { void experience.toggleSound(); }]
   ],
   onTurn: angle => { yaw = angle; }
 });
@@ -137,7 +140,7 @@ renderer.xr.addEventListener('sessionend', () => {
   threshold.setQuality(desktopCinematic);
   camera.position.set(0, 1.6, 0);
 });
-$('#export').onclick=async()=>{const b=$('#export');b.disabled=true;b.textContent='Exporting…';let restoreExport;try{restoreExport=experience.prepareExport();const glb=await new GLTFExporter().parseAsync(world,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download='Creator-Base-Landmark-v5.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('world.glb exported · metres · Y up');}catch(e){console.error(e);toast('Export failed: '+e.message);}finally{restoreExport?.();b.disabled=false;b.textContent='Export showcase ↗';}};
+$('#export').onclick=async()=>{const b=$('#export');b.disabled=true;b.textContent='Exporting…';let restoreExport;try{restoreExport=experience.prepareExport();const glb=await new GLTFExporter().parseAsync(world,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download='Creator-Base-Spatial-v7.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('world.glb exported · metres · Y up');}catch(e){console.error(e);toast('Export failed: '+e.message);}finally{restoreExport?.();b.disabled=false;b.textContent='Export showcase ↗';}};
 // Batch static repeated primitives for headset draw-call efficiency.
 const dynamic=new Set([...tiers,...mats,stage,arenaRing,padRing,...shoes.flatMap(s=>[s.halo,...s.layers])]);const batches=new Map();for(const o of [...world.children]){if(!o.isMesh||o.isInstancedMesh||dynamic.has(o))continue;const roof=o.position.y>=3.45&&o.position.y<4;const key=o.geometry.uuid+o.material.uuid+roof;if(!batches.has(key))batches.set(key,[]);batches.get(key).push(o);}for(const list of batches.values()){if(list.length<2)continue;const first=list[0],mesh=new T.InstancedMesh(first.geometry,first.material,list.length);mesh.userData.roof=first.position.y>=3.45&&first.position.y<4;mesh.receiveShadow=true;mesh.castShadow=list.some(o=>o.castShadow);list.forEach((o,i)=>{o.updateMatrix();mesh.setMatrixAt(i,o.matrix);world.remove(o);});world.add(mesh);}
 let triangles=0;world.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=(g.index?g.index.count:g.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);}});$('#stats').textContent=`${Math.round(triangles/1000)}K TRIANGLES / 1:1 MODEL`;window.creatorBase={scene,world,renderer,camera,rig,shoes,triangles,valid,jump,setReviewShot,threshold,branding,programme,experience,landmark,goTo,get mark(){return mark},get daylight(){return daylight},get event(){return ['launch','talk','sellin','culture'].includes(programme.arenaMode)}};
