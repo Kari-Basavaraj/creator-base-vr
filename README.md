@@ -36,7 +36,7 @@ Open `http://localhost:8089/`. No package install or build is required. For Ques
 - **Journey:** choose a persona, review the intended arc, or inspect any space. Jump controls are inspection aids; they do not prove a timed continuous visit.
 - **Host:** season, five Arena arrangements, maker material, recording rehearsal, Imprint replay, take-home mark and reset. Reset retains saved local history.
 - **Sound:** optional, off initially; no microphone is captured and no external music is loaded. Enable before entering VR if wanted.
-- **Quest:** left stick smooth movement; right stick 30° snap turn; aim and trigger for a product/activity, otherwise aim at the floor and trigger to teleport. Near-hand product activation remains available. Physical room-scale motion cannot be constrained by desktop collision rules.
+- **Quest Touch:** left thumbstick walks. Right thumbstick turns in 30° steps by default. Hold either grip to aim at the floor and release over a green marker to teleport. Aim and pull the trigger to interact. Click either thumbstick, or press A/X on recognized Touch controllers, to open the in-world menu. B/Y closes the menu or cancels an active teleport. The menu offers room shortcuts, teleport-only movement, smooth turning and optional controller vibration. Physical room-scale motion can cross virtual walls.
 - **H / Hide UI:** unobstructed inspection. **Brand** cycles through marks; **View** includes the entrance, landmark and back tier.
 - Daylight/Dusk is independent of Arena mode. **Lightweight** disables the desktop planar reflection and directional shadow; immersive VR automatically uses that lighter path.
 

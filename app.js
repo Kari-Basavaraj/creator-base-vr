@@ -1,3 +1,4 @@
+import { createQuestControls } from './quest-controls.js';
 import {buildLandmark} from './landmark.js?v=landmark-v5';
 import {makeFootwear,makeSole} from './footwear.js?v=landmark-v5';
 import * as T from 'three';
@@ -86,7 +87,7 @@ $('#clean').onclick=()=>document.body.classList.add('clean');$('#restore-ui').on
 $('#day').onclick=()=>light(true);$('#dusk').onclick=()=>light(false);$('#mode').onclick=()=>{event=!['launch','talk','sellin','culture'].includes(programme.arenaMode);experience.setArenaMode(event?'launch':'everyday');};
 let pointerTravel=0;let yaw=0,pitch=0,walking=false,overview=false,mark=0,markSaved=false,drag=false,lastX=0,lastY=0,tour=null;const keys=new Set(),clock=new T.Clock();const stops=[[31.4,30,31.4,40],[24,39.2,23.2,37],[6,26.8,6,23.5],[9,40,-250,32]];
 function lookAt(x,y){const dir=new T.Vector3(x-rig.position.x,0,-y-rig.position.z);yaw=Math.atan2(-dir.x,-dir.z);pitch=0;rig.rotation.y=yaw;camera.rotation.set(0,0,0);}
-function jump(i){threshold.reflector.visible=threshold.cinematic&&!renderer.xr.isPresenting;camera.fov=65;camera.updateProjectionMatrix();world.traverse(o=>{if(o.userData.roof)o.visible=true;});walking=true;overview=false;document.body.classList.add('walking');const s=stops[i];rig.position.set(s[0],0,-s[1]);camera.position.set(0,1.6,0);lookAt(s[2],s[3]);$('.journey .active')?.classList.remove('active');$(`[data-stop="${i}"]`).classList.add('active');tour=null;}
+function jump(i){threshold.reflector.visible=threshold.cinematic&&!renderer.xr.isPresenting;camera.fov=65;camera.updateProjectionMatrix();world.traverse(o=>{if(o.userData.roof)o.visible=true;});walking=true;overview=false;document.body.classList.add('walking');const s=stops[i];rig.position.set(s[0],0,-s[1]);camera.position.set(0,renderer.xr.isPresenting?0:1.6,0);lookAt(s[2],s[3]);$('.journey .active')?.classList.remove('active');$(`[data-stop="${i}"]`).classList.add('active');tour=null;}
 function goTo(x,y,tx=x,ty=y+1){jump(0);rig.position.set(x,0,-y);lookAt(tx,ty);}
 function restoreMark(seed){mark=seed==null?0:1;markSaved=seed!=null;if(seed!=null)experience.applySeed(seed);vp.material=seed==null?M.white:M.glow;padRing.visible=seed!=null;updatePins(vp,markPins,mark);}
 const experience=createExperience({world,scene,renderer,rig,camera,shoes,threshold,programme,M,markPins,visitorPins:vp,padRing,goTo,onLift:lift,onReplayMark:()=>restoreMark(null),onRestoreMark:restoreMark,onShowcaseMark:()=>{vp.material=M.glow;updatePins(vp,markPins,1);},notify:toast});
@@ -103,9 +104,39 @@ window.addEventListener('keydown',e=>{if($('#controls').open||e.target.closest?.
 function lift(s){s.until=performance.now()+30000;s.shoe.position.y=1.13;s.halo.visible=true;s.layers.forEach(l=>l.visible=false);s.cardPhase=-1;experience.onProductLift(s);toast('Lift to learn · 0 / 5 / 20-second construction story');}
 function interact(){const p=renderer.xr.isPresenting?renderer.xr.getCamera().getWorldPosition(new T.Vector3()):rig.position;if(experience.interactAt(p))return;const s=shoes.map(s=>({shoe:s,distance:Math.hypot(s.x-p.x,s.y+p.z)})).filter(a=>a.distance<2.8).sort((a,b)=>a.distance-b.distance)[0]?.shoe;if(s)lift(s);else if(Math.hypot(p.x-6,p.z+25.5)<2&&!markSaved){experience.recordMark();markSaved=true;}else toast('Walk up to a plinth, then press E to lift a shoe.');}
 $('#map').onclick=e=>{const svg=$('#map'),p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());if(valid(q.x,q.y)){walking=true;overview=false;document.body.classList.add('walking');rig.position.set(q.x,0,-q.y);camera.position.y=1.6;pitch=0;camera.rotation.x=0;}};
-// Quest controllers: floor ray teleport, smooth movement, and head-centred snap turning.
-const controllers=[],raycaster=new T.Raycaster(),tempMatrix=new T.Matrix4(),teleport=new T.Vector3(),plane=new T.Plane(new T.Vector3(0,1,0),0);for(let i=0;i<2;i++){const c=renderer.xr.getController(i);rig.add(c);controllers.push(c);const line=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,0,-8)]),new T.LineBasicMaterial({color:'#eee9db'}));c.add(line);c.addEventListener('selectstart',()=>{if(experience.controllerInteract(c))return;tempMatrix.identity().extractRotation(c.matrixWorld);raycaster.ray.origin.setFromMatrixPosition(c.matrixWorld);raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);if(raycaster.ray.intersectPlane(plane,teleport)&&valid(teleport.x,-teleport.z)){const hits=raycaster.intersectObjects(world.children,true);if(hits.some(h=>h.distance<raycaster.ray.origin.distanceTo(teleport)-.05&&h.point.y>.2&&h.object.material?.opacity>.2))return;const head=renderer.xr.getCamera().getWorldPosition(new T.Vector3());rig.position.x+=teleport.x-head.x;rig.position.z+=teleport.z-head.z;}});}
-let snapReady=true;const vr=VRButton.createButton(renderer);vr.hidden=true;document.body.append(vr);if(navigator.xr)navigator.xr.isSessionSupported('immersive-vr').then(supported=>vr.hidden=!supported).catch(()=>{vr.hidden=true;});renderer.xr.addEventListener('sessionstart',()=>{jump(0);camera.position.y=0;});renderer.xr.addEventListener('sessionend',()=>{camera.position.set(0,1.6,0);});
+const questControls = createQuestControls({
+  renderer, scene, rig, valid,
+  move: (dx, dz, head) => {
+    if (valid(head.x + dx, -head.z - dz)) move(dx, dz);
+  },
+  floorHeight: (x, y) => programme.floorHeightAt(x, y),
+  interact: controller => experience.controllerInteract(controller),
+  actions: [
+    ['Discovery Lab', () => { experience.visit('lab'); questControls.reset(); }],
+    ['Community Arena', () => { experience.visit('arena'); questControls.reset(); }],
+    ['Imprint Wall', () => { experience.visit('imprint'); questControls.reset(); }],
+    ['Creator Studio', () => { experience.visit('studio'); questControls.reset(); }]
+  ],
+  onTurn: angle => { yaw = angle; }
+});
+const vr = VRButton.createButton(renderer);
+vr.hidden = true;
+document.body.append(vr);
+if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(supported => { vr.hidden = !supported; }).catch(() => { vr.hidden = true; });
+let desktopCinematic;
+renderer.xr.addEventListener('sessionstart', () => {
+  desktopCinematic = threshold.cinematic;
+  threshold.setQuality(false);
+  jump(0);
+  camera.position.y = 0;
+  keys.clear();
+  questControls.reset();
+});
+renderer.xr.addEventListener('sessionend', () => {
+  questControls.reset();
+  threshold.setQuality(desktopCinematic);
+  camera.position.set(0, 1.6, 0);
+});
 $('#export').onclick=async()=>{const b=$('#export');b.disabled=true;b.textContent='Exporting…';let restoreExport;try{restoreExport=experience.prepareExport();const glb=await new GLTFExporter().parseAsync(world,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download='Creator-Base-Landmark-v5.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('world.glb exported · metres · Y up');}catch(e){console.error(e);toast('Export failed: '+e.message);}finally{restoreExport?.();b.disabled=false;b.textContent='Export showcase ↗';}};
 // Batch static repeated primitives for headset draw-call efficiency.
 const dynamic=new Set([...tiers,...mats,stage,arenaRing,padRing,...shoes.flatMap(s=>[s.halo,...s.layers])]);const batches=new Map();for(const o of [...world.children]){if(!o.isMesh||o.isInstancedMesh||dynamic.has(o))continue;const roof=o.position.y>=3.45&&o.position.y<4;const key=o.geometry.uuid+o.material.uuid+roof;if(!batches.has(key))batches.set(key,[]);batches.get(key).push(o);}for(const list of batches.values()){if(list.length<2)continue;const first=list[0],mesh=new T.InstancedMesh(first.geometry,first.material,list.length);mesh.userData.roof=first.position.y>=3.45&&first.position.y<4;mesh.receiveShadow=true;mesh.castShadow=list.some(o=>o.castShadow);list.forEach((o,i)=>{o.updateMatrix();mesh.setMatrixAt(i,o.matrix);world.remove(o);});world.add(mesh);}
@@ -113,6 +144,6 @@ let triangles=0;world.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=(g
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});$('#loading').style.display='none';
 const entryParams=new URLSearchParams(location.search);const entryView=['threshold','arrival','landmark','entrance','tiers','lab','imprint','workshop','studio','culture','everyday'].indexOf(entryParams.get('view'));if(entryView>=0)setReviewShot(entryView);if(entryParams.get('clean')==='1')document.body.classList.add('clean');
 renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05),now=performance.now();if(walking&&!overview&&!renderer.xr.isPresenting){const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0),side=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),norm=Math.max(1,Math.hypot(forward,side)),speed=dt*1.6/norm;move((-Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed,(-Math.cos(yaw)*forward-Math.sin(yaw)*side)*speed);}
-if(renderer.xr.isPresenting){const session=renderer.xr.getSession();for(const source of session.inputSources){const gp=source.gamepad;if(!gp)continue;const ax=gp.axes.length>=4?gp.axes.slice(2,4):gp.axes;if(source.handedness==='left'){const head=renderer.xr.getCamera(),dir=new T.Vector3();head.getWorldDirection(dir);dir.y=0;dir.normalize();const side=new T.Vector3(-dir.z,0,dir.x);const a=Math.abs(ax[0])>.15?ax[0]:0,b=Math.abs(ax[1])>.15?ax[1]:0;move((side.x*a-dir.x*b)*dt*1.5,(side.z*a-dir.z*b)*dt*1.5);}if(source.handedness==='right'){if(Math.abs(ax[0])<.25)snapReady=true;if(Math.abs(ax[0])>.7&&snapReady){const head=renderer.xr.getCamera().getWorldPosition(new T.Vector3()),angle=-Math.sign(ax[0])*Math.PI/6;rig.rotateY(angle);const after=renderer.xr.getCamera().getWorldPosition(new T.Vector3());rig.position.add(head.sub(after));yaw=rig.rotation.y;snapReady=false;}}}for(const c of controllers){const p=c.getWorldPosition(new T.Vector3());for(const s of shoes)if(p.distanceTo(new T.Vector3(s.x,1.25,-s.y))<.4&&s.until<now)lift(s);}}
+if (renderer.xr.isPresenting && !experience.suspended) questControls.tick(dt);
 for(const s of shoes)if(!experience.suspended&&s.until&&s.until<now){s.until=0;s.shoe.position.y=1.13;s.halo.visible=false;s.layers.forEach(l=>l.visible=false);}const p=renderer.xr.isPresenting?renderer.xr.getCamera().getWorldPosition(new T.Vector3()):rig.position;if(!overview&&walking&&!experience.suspended){const height=programme.floorHeightAt(p.x,-p.z);rig.position.y=T.MathUtils.damp(rig.position.y,height,10,dt);}experience.tick(p,dt,{walking,overview});const onPad=!experience.suspended&&!overview&&Math.hypot(p.x-6,p.z+25.5)<.65;if(onPad&&!markSaved){experience.recordMark();markSaved=true;toast('Your effort belongs here. Your mark is taking shape.');}if(!experience.suspended&&markSaved&&mark<1){mark=Math.min(1,mark+dt/4);vp.material=M.glow;updatePins(vp,markPins,mark);padRing.visible=true;}
 $('#map-dot').setAttribute('cx',p.x);$('#map-dot').setAttribute('cy',-p.z);const x=p.x,y=-p.z;$('#location').textContent=y<35.47&&x>29&&x<34?'Lift lobby':x>45.83?'Team & partner base':x<12&&y<35.47?'Community Arena':x<18.43?'Fuel & Recovery':x<29?'Discovery Lab':'The Threshold';renderer.render(scene,camera);});
