@@ -83,13 +83,13 @@ export function createSpatialAudio(zones) {
     heel.start(now);
     heel.stop(now + .11);
   }
-  async function toggle() {
+  async function setEnabled(target) {
     if (pending) return enabled;
     pending = true;
     try {
       if (!context) init();
-      if (!enabled) await context.resume();
-      enabled = !enabled;
+      if (target && context.state !== 'running') await context.resume();
+      enabled = target && context.state === 'running';
       master.gain.setTargetAtTime(enabled ? .65 : 0, context.currentTime, .14);
       resetStride();
       return enabled;
@@ -128,5 +128,5 @@ export function createSpatialAudio(zones) {
       footstep(zone);
     }
   }
-  return {toggle, tick, resetStride};
+  return {toggle: () => setEnabled(!enabled), enable: () => setEnabled(true), tick, resetStride};
 }

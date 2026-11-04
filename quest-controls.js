@@ -1,6 +1,6 @@
 import * as T from 'three';
 
-export function createQuestControls({renderer, scene, rig, valid, move, floorHeight, interact, actions, onTurn}) {
+export function createQuestControls({renderer, scene, rig, viewerPose, isTracking, valid, move, floorHeight, interact, actions, onTurn}) {
   const panelCanvas = document.createElement('canvas');
   panelCanvas.width = 1024;
   panelCanvas.height = 1024;
@@ -60,7 +60,7 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
   function toggleMenu() {
     panel.visible = !panel.visible;
     if (!panel.visible) return;
-    const view = renderer.xr.getCamera();
+    const view = viewerPose;
     view.getWorldPosition(head);
     view.getWorldDirection(heading);
     heading.y = 0;
@@ -107,7 +107,7 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
     }
     const distance = origin.distanceTo(point);
     if (distance > 8 || distance < .35 || Math.abs(point.y - floorHeight(point.x, -point.z)) > .05) return false;
-    renderer.xr.getCamera().getWorldPosition(head);
+    viewerPose.getWorldPosition(head);
     if (!valid(rig.position.x + point.x - head.x, -rig.position.z - point.z + head.z)) return false;
     // Validate the path against the same floor plan used by walking.
     const samples = Math.ceil(distance / .12);
@@ -142,7 +142,7 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
       }
     });
     controller.addEventListener('selectstart', () => {
-      if (!state.source || !controller.visible || teleportOwner) return;
+      if (!isTracking() || !state.source || !controller.visible || teleportOwner) return;
       if (panel.visible) {
         aim(state);
         const row = menuRow();
@@ -156,13 +156,13 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
       if (interact(controller)) pulse(state);
     });
     controller.addEventListener('squeezestart', () => {
-      if (!panel.visible && !teleportOwner && state.source?.gamepad) teleportOwner = state;
+      if (isTracking() && !panel.visible && !teleportOwner && state.source?.gamepad) teleportOwner = state;
     });
     controller.addEventListener('squeezeend', () => {
       if (teleportOwner !== state) return;
       teleportOwner = null;
       marker.visible = false;
-      if (!panel.visible && controller.visible && destination(state)) {
+      if (isTracking() && !panel.visible && controller.visible && destination(state)) {
         rig.position.x += state.destination.x - head.x;
         rig.position.z += state.destination.z - head.z;
         rig.position.y = state.destination.y;
@@ -174,7 +174,7 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
   });
 
   function turn(angle) {
-    renderer.xr.getCamera().getWorldPosition(head);
+    viewerPose.getWorldPosition(head);
     offset.copy(head).sub(rig.position);
     rig.position.add(offset).sub(offset.clone().applyAxisAngle(up, angle));
     rig.rotation.y += angle;
@@ -203,11 +203,9 @@ export function createQuestControls({renderer, scene, rig, valid, move, floorHei
         if (Math.abs(x) < .25) state.snapReady = true;
         if (!panel.visible && !teleportOwner) {
           if (source.handedness === 'left' && smoothMove && Math.hypot(x, y) > .2) {
-            renderer.xr.getCamera().getWorldDirection(heading);
-            heading.y = 0;
-            heading.normalize();
+            heading.set(0, 0, -1).applyAxisAngle(up, rig.rotation.y);
             const speed = dt * 1.5 / Math.max(1, Math.hypot(x, y));
-            renderer.xr.getCamera().getWorldPosition(head);
+            viewerPose.getWorldPosition(head);
             move((-heading.z * x - heading.x * y) * speed, (heading.x * x - heading.z * y) * speed, head);
           }
           if (source.handedness === 'right') {

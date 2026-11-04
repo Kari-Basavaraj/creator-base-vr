@@ -1,17 +1,34 @@
 import {addVisitors} from './visitors.js';
-import { createQuestControls } from './quest-controls.js?v=quest-360';
+import { createQuestControls } from './quest-controls.js?v=quest-stable';
 import {buildLandmark} from './landmark.js?v=landmark-v5';
 import {makeFootwear,makeSole} from './footwear.js?v=landmark-v5';
 import * as T from 'three';
 import { VRButton } from './vendor/VRButton.js';
 import { GLTFExporter } from './vendor/GLTFExporter.js';
-import { upgradeThreshold } from './threshold.js?v=spatial-v7';
+import { upgradeThreshold } from './threshold.js?v=quest-stable';
 import { addBranding } from './branding.js?v=landmark-v5';
 import { buildProgramme } from './programme.js?v=landmark-v5';
-import { createExperience } from './experience.js?v=spatial-v7';
+import { createExperience } from './experience.js?v=quest-stable';
 const $=s=>document.querySelector(s), scene=new T.Scene(),world=new T.Group();world.name='Creator Base — 1:1 CAD model';scene.add(world);
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local-floor');renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;$('#world').append(renderer.domElement);
 const camera=new T.PerspectiveCamera(65,innerWidth/innerHeight,.07,1600),rig=new T.Group();rig.add(camera);scene.add(rig);camera.position.y=1.6;
+// Keep tracking pose separate from Three.js's per-eye render cameras.
+const viewerPose = new T.PerspectiveCamera();
+rig.add(viewerPose);
+const viewerPosition = new T.Vector3();
+let tracking = false;
+renderer.xr.setFramebufferScaleFactor(.75);
+renderer.xr.setFoveation(1);
+function updateViewerPose(frame) {
+  const space = renderer.xr.getReferenceSpace();
+  const pose = frame && space && frame.getViewerPose(space);
+  tracking = !!pose;
+  if (!pose) return;
+  viewerPose.matrix.fromArray(pose.transform.matrix);
+  viewerPose.matrix.decompose(viewerPose.position, viewerPose.quaternion, viewerPose.scale);
+  viewerPose.updateWorldMatrix(true, false);
+}
+
 const mat=(c,extra={})=>new T.MeshStandardMaterial({color:c,roughness:.83,...extra});const M={floor:mat('#CFC8BE'),oak:mat('#C9A27A'),dark:mat('#4A3A2E'),terra:mat('#E2DDD5'),core:mat('#8E8A84'),felt:mat('#B8B2A8'),concrete:mat('#A8A39B'),black:mat('#1A1A1A'),white:mat('#f2eee5'),green:mat('#354c32'),track:mat('#9C4A32'),glow:mat('#FF5A1F',{emissive:'#FF5A1F',emissiveIntensity:2.2}),light:mat('#fff0d8',{emissive:'#ffe4b6',emissiveIntensity:1.2}),glass:mat('#b7c8c1',{transparent:true,opacity:.09,depthWrite:false,roughness:.1,side:T.DoubleSide})};
 // Procedural tactile materials: no external imagery or model downloads.
 function surface(kind){const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');let n=921;const rnd=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};ctx.fillStyle=kind==='oak'?'#c9a27a':kind==='terrazzo'?'#e2ddd5':'#cfc8be';ctx.fillRect(0,0,256,256);for(let i=0;i<(kind==='oak'?850:2400);i++){const x=rnd()*256,y=rnd()*256;ctx.fillStyle=kind==='oak'?`rgba(80,49,21,${rnd()*.16})`:`rgba(${rnd()>.5?'110,104,93':'255,251,238'},${rnd()*.13})`;if(kind==='oak')ctx.fillRect(x,y,.3+rnd(),15+rnd()*95);else{ctx.beginPath();ctx.ellipse(x,y,rnd()*.85+.2,rnd()*.7+.15,rnd()*3,0,7);ctx.fill();}}const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;return t;}
@@ -92,7 +109,7 @@ function lookAt(x,y){const dir=new T.Vector3(x-rig.position.x,0,-y-rig.position.
 function jump(i){threshold.reflector.visible=threshold.cinematic&&!renderer.xr.isPresenting;camera.fov=65;camera.updateProjectionMatrix();world.traverse(o=>{if(o.userData.roof)o.visible=true;});walking=true;overview=false;document.body.classList.add('walking');const s=stops[i];rig.position.set(s[0],0,-s[1]);camera.position.set(0,renderer.xr.isPresenting?0:1.6,0);lookAt(s[2],s[3]);$('.journey .active')?.classList.remove('active');$(`[data-stop="${i}"]`).classList.add('active');tour=null;}
 function goTo(x,y,tx=x,ty=y+1){jump(0);rig.position.set(x,0,-y);lookAt(tx,ty);}
 function restoreMark(seed){mark=seed==null?0:1;markSaved=seed!=null;if(seed!=null)experience.applySeed(seed);vp.material=seed==null?M.white:M.glow;padRing.visible=seed!=null;updatePins(vp,markPins,mark);}
-const experience=createExperience({world,scene,renderer,rig,camera,shoes,threshold,programme,M,markPins,visitorPins:vp,padRing,goTo,onLift:lift,onReplayMark:()=>restoreMark(null),onRestoreMark:restoreMark,onShowcaseMark:()=>{vp.material=M.glow;updatePins(vp,markPins,1);},notify:toast});
+const experience=createExperience({viewerPose,world,scene,renderer,rig,camera,shoes,threshold,programme,M,markPins,visitorPins:vp,padRing,goTo,onLift:lift,onReplayMark:()=>restoreMark(null),onRestoreMark:restoreMark,onShowcaseMark:()=>{vp.material=M.glow;updatePins(vp,markPins,1);},notify:toast});
 if(experience.savedMark)restoreMark(experience.savedMark.seed);
 rig.position.set(31.4,0,-30);lookAt(31.4,40); // exact specified spawn
 // Landing camera uses the same model; Start restores the exact CAD spawn.
@@ -104,12 +121,14 @@ function valid(x,y){const door=programme.doorCollider;return inside(x,y)&&![...c
 function move(dx,dz){let x=rig.position.x+dx,y=-rig.position.z;if(valid(x,y))rig.position.x=x;y=-rig.position.z-dz;if(valid(rig.position.x,y))rig.position.z+=dz;}
 window.addEventListener('keydown',e=>{if($('#controls').open||e.target.closest?.('input,select,textarea,[contenteditable]'))return;keys.add(e.code);if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyE')interact();if(e.code==='KeyH')document.body.classList.toggle('clean');});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();drag=false;});const cv=renderer.domElement;cv.addEventListener('pointerdown',e=>{drag=true;pointerTravel=0;lastX=e.clientX;lastY=e.clientY;cv.setPointerCapture(e.pointerId);});cv.addEventListener('pointermove',e=>{if(!drag)return;pointerTravel+=Math.abs(e.clientX-lastX)+Math.abs(e.clientY-lastY);yaw-=(e.clientX-lastX)*.003;pitch=Math.max(-1.4,Math.min(1.4,pitch-(e.clientY-lastY)*.003));rig.rotation.y=yaw;camera.rotation.x=pitch;lastX=e.clientX;lastY=e.clientY;});cv.addEventListener('pointerup',()=>{drag=false;});cv.addEventListener('pointercancel',()=>{drag=false;});cv.addEventListener('click',()=>{if(walking&&pointerTravel<8)interact();});$('#touch-forward').onpointerdown=e=>{keys.add('KeyW');e.target.setPointerCapture(e.pointerId)};$('#touch-forward').onpointerup=()=>keys.delete('KeyW');$('#touch-forward').onpointercancel=()=>keys.delete('KeyW');
 function lift(s){s.until=performance.now()+30000;s.shoe.position.y=1.13;s.halo.visible=true;s.layers.forEach(l=>l.visible=false);s.cardPhase=-1;experience.onProductLift(s);toast('Lift to learn · 0 / 5 / 20-second construction story');}
-function interact(){const p=renderer.xr.isPresenting?renderer.xr.getCamera().getWorldPosition(new T.Vector3()):rig.position;if(experience.interactAt(p))return;const s=shoes.map(s=>({shoe:s,distance:Math.hypot(s.x-p.x,s.y+p.z)})).filter(a=>a.distance<2.8).sort((a,b)=>a.distance-b.distance)[0]?.shoe;if(s)lift(s);else if(Math.hypot(p.x-6,p.z+25.5)<2&&!markSaved){experience.recordMark();markSaved=true;}else toast('Walk up to a plinth, then press E to lift a shoe.');}
+function interact(){const p=renderer.xr.isPresenting?viewerPose.getWorldPosition(viewerPosition):rig.position;if(experience.interactAt(p))return;const s=shoes.map(s=>({shoe:s,distance:Math.hypot(s.x-p.x,s.y+p.z)})).filter(a=>a.distance<2.8).sort((a,b)=>a.distance-b.distance)[0]?.shoe;if(s)lift(s);else if(Math.hypot(p.x-6,p.z+25.5)<2&&!markSaved){experience.recordMark();markSaved=true;}else toast('Walk up to a plinth, then press E to lift a shoe.');}
 $('#map').onclick=e=>{const svg=$('#map'),p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());if(valid(q.x,q.y)){walking=true;overview=false;document.body.classList.add('walking');rig.position.set(q.x,0,-q.y);camera.position.y=1.6;pitch=0;camera.rotation.x=0;}};
 const questControls = createQuestControls({
-  renderer, scene, rig, valid,
+  renderer, scene, rig, valid, viewerPose, isTracking: () => tracking,
   move: (dx, dz, head) => {
-    if (valid(head.x + dx, -head.z - dz)) move(dx, dz);
+    // Slide along walls independently on each axis using the tracked body position.
+    if (valid(head.x + dx, -head.z)) { rig.position.x += dx; head.x += dx; }
+    if (valid(head.x, -head.z - dz)) rig.position.z += dz;
   },
   floorHeight: (x, y) => programme.floorHeightAt(x, y),
   interact: controller => experience.controllerInteract(controller),
@@ -124,12 +143,28 @@ const questControls = createQuestControls({
 });
 const vr = VRButton.createButton(renderer);
 vr.hidden = true;
+vr.addEventListener('click', () => {
+  if (!renderer.xr.isPresenting) void experience.enableSound();
+}, {capture: true});
 document.body.append(vr);
 if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(supported => { vr.hidden = !supported; }).catch(() => { vr.hidden = true; });
-let desktopCinematic;
+let desktopCinematic, desktopShadows, desktopNear, desktopFar;
+const reducedLights = [];
 renderer.xr.addEventListener('sessionstart', () => {
   desktopCinematic = threshold.cinematic;
   threshold.setQuality(false);
+  desktopShadows = renderer.shadowMap.enabled;
+  renderer.shadowMap.enabled = false;
+  desktopNear = camera.near;
+  desktopFar = camera.far;
+  camera.near = .12;
+  camera.far = 950;
+  scene.traverse(object => {
+    if ((object.isPointLight || object.isSpotLight) && object.visible) {
+      reducedLights.push(object);
+      object.visible = false;
+    }
+  });
   jump(0);
   camera.position.y = 0;
   keys.clear();
@@ -138,6 +173,12 @@ renderer.xr.addEventListener('sessionstart', () => {
 renderer.xr.addEventListener('sessionend', () => {
   questControls.reset();
   threshold.setQuality(desktopCinematic);
+  renderer.shadowMap.enabled = desktopShadows;
+  camera.near = desktopNear;
+  camera.far = desktopFar;
+  camera.updateProjectionMatrix();
+  for (const light of reducedLights.splice(0)) light.visible = true;
+  tracking = false;
   camera.position.set(0, 1.6, 0);
 });
 $('#export').onclick=async()=>{const b=$('#export');b.disabled=true;b.textContent='Exporting…';let restoreExport;try{restoreExport=experience.prepareExport();const glb=await new GLTFExporter().parseAsync(world,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download='Creator-Base-Spatial-v7.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('world.glb exported · metres · Y up');}catch(e){console.error(e);toast('Export failed: '+e.message);}finally{restoreExport?.();b.disabled=false;b.textContent='Export showcase ↗';}};
@@ -146,7 +187,9 @@ const dynamic=new Set([...tiers,...mats,stage,arenaRing,padRing,...shoes.flatMap
 let triangles=0;world.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=(g.index?g.index.count:g.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);}});$('#stats').textContent=`${Math.round(triangles/1000)}K TRIANGLES / 1:1 MODEL`;window.creatorBase={scene,world,renderer,camera,rig,shoes,triangles,valid,jump,setReviewShot,threshold,branding,programme,experience,landmark,goTo,get mark(){return mark},get daylight(){return daylight},get event(){return ['launch','talk','sellin','culture'].includes(programme.arenaMode)}};
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});$('#loading').style.display='none';
 const entryParams=new URLSearchParams(location.search);const entryView=['threshold','arrival','landmark','entrance','tiers','lab','imprint','workshop','studio','culture','everyday'].indexOf(entryParams.get('view'));if(entryView>=0)setReviewShot(entryView);if(entryParams.get('clean')==='1')document.body.classList.add('clean');
-renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05),now=performance.now();if(walking&&!overview&&!renderer.xr.isPresenting){const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0),side=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),norm=Math.max(1,Math.hypot(forward,side)),speed=dt*1.6/norm;move((-Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed,(-Math.cos(yaw)*forward-Math.sin(yaw)*side)*speed);}
-if (renderer.xr.isPresenting && !experience.suspended) questControls.tick(dt);
-for(const s of shoes)if(!experience.suspended&&s.until&&s.until<now){s.until=0;s.shoe.position.y=1.13;s.halo.visible=false;s.layers.forEach(l=>l.visible=false);}const p=renderer.xr.isPresenting?renderer.xr.getCamera().getWorldPosition(new T.Vector3()):rig.position;if(!overview&&walking&&!experience.suspended){const height=programme.floorHeightAt(p.x,-p.z);rig.position.y=T.MathUtils.damp(rig.position.y,height,10,dt);}experience.tick(p,dt,{walking,overview});const onPad=!experience.suspended&&!overview&&Math.hypot(p.x-6,p.z+25.5)<.65;if(onPad&&!markSaved){experience.recordMark();markSaved=true;toast('Your effort belongs here. Your mark is taking shape.');}if(!experience.suspended&&markSaved&&mark<1){mark=Math.min(1,mark+dt/4);vp.material=M.glow;updatePins(vp,markPins,mark);padRing.visible=true;}
+renderer.setAnimationLoop((time, frame)=>{
+if (renderer.xr.isPresenting) updateViewerPose(frame);
+const dt=Math.min(clock.getDelta(),.05),now=performance.now();if(walking&&!overview&&!renderer.xr.isPresenting){const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0),side=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),norm=Math.max(1,Math.hypot(forward,side)),speed=dt*1.6/norm;move((-Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed,(-Math.cos(yaw)*forward-Math.sin(yaw)*side)*speed);}
+if (renderer.xr.isPresenting && tracking && !experience.suspended) questControls.tick(dt);
+for(const s of shoes)if(!experience.suspended&&s.until&&s.until<now){s.until=0;s.shoe.position.y=1.13;s.halo.visible=false;s.layers.forEach(l=>l.visible=false);}const p=renderer.xr.isPresenting?viewerPose.getWorldPosition(viewerPosition):rig.position;if(!overview&&walking&&!experience.suspended&&(!renderer.xr.isPresenting||tracking)){const height=programme.floorHeightAt(p.x,-p.z);rig.position.y=T.MathUtils.damp(rig.position.y,height,10,dt);}if (!renderer.xr.isPresenting || tracking) experience.tick(p,dt,{walking,overview});const onPad=(!renderer.xr.isPresenting||tracking)&&!experience.suspended&&!overview&&Math.hypot(p.x-6,p.z+25.5)<.65;if(onPad&&!markSaved){experience.recordMark();markSaved=true;toast('Your effort belongs here. Your mark is taking shape.');}if(!experience.suspended&&markSaved&&mark<1){mark=Math.min(1,mark+dt/4);vp.material=M.glow;updatePins(vp,markPins,mark);padRing.visible=true;}
 $('#map-dot').setAttribute('cx',p.x);$('#map-dot').setAttribute('cy',-p.z);const x=p.x,y=-p.z;$('#location').textContent=y<35.47&&x>29&&x<34?'Lift lobby':x>45.83?'Team & partner base':x<12&&y<35.47?'Community Arena':x<18.43?'Fuel & Recovery':x<29?'Discovery Lab':'The Threshold';renderer.render(scene,camera);});
